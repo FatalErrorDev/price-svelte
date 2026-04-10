@@ -4,9 +4,6 @@
 
   function switchPage(page) {
     currentPage.set(page);
-    if (page === 'analysis') {
-      // Keep current branch
-    }
   }
 
   function switchBranch(branch) {
@@ -44,9 +41,7 @@
 
 <div class="auth-bar" id="auth-bar">
   {#if $isSignedIn}
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <span class="status-ok" onclick={disconnectDrive} style="cursor:pointer" title="Click to disconnect">Connected to Drive ✓</span>
+    <button class="status-ok" onclick={disconnectDrive} title="Click to disconnect" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:inherit;padding:0">Connected to Drive ✓</button>
   {:else}
     <button onclick={signIn}>Connect Google Drive</button>
   {/if}

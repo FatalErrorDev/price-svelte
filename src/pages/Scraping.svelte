@@ -1,6 +1,7 @@
 <script>
   import { isSignedIn } from '../lib/stores.js';
   import { uploadFile, FOLDERS } from '../lib/drive.js';
+  import { DAYS, DAY_LABELS, capitalize } from '../lib/constants.js';
   import DropZone from '../components/DropZone.svelte';
   import FileChip from '../components/FileChip.svelte';
   import ScheduledFiles from '../components/ScheduledFiles.svelte';
@@ -9,12 +10,12 @@
   let runNowFile = $state(null);
   let scheduleFile = $state(null);
   let selectedDay = $state(null);
-  let runNowResult = $state(null); // { type: 'loading'|'success'|'error', message?, link? }
+  let runNowResult = $state(null);
   let scheduleResult = $state(null);
 
-  let runNowDropZone = $state(null);
-  let scheduleDropZone = $state(null);
-  let scheduledFilesRef = $state(null);
+  let runNowDropZone;
+  let scheduleDropZone;
+  let scheduledFilesRef;
 
   function onRunNowFile(file) {
     runNowFile = file;
@@ -26,14 +27,15 @@
     scheduleResult = null;
   }
 
-  function removeRunNowFile() {
+  function resetRunNow() {
     runNowFile = null;
     runNowResult = null;
     runNowDropZone?.reset();
   }
 
-  function removeScheduleFile() {
+  function resetSchedule() {
     scheduleFile = null;
+    selectedDay = null;
     scheduleResult = null;
     scheduleDropZone?.reset();
   }
@@ -68,7 +70,7 @@
       const res = await uploadFile(scheduleFile, FOLDERS[selectedDay]);
       scheduleResult = {
         type: 'success',
-        message: 'Scheduled for ' + selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1),
+        message: 'Scheduled for ' + capitalize(selectedDay),
         link: res.webViewLink,
       };
       scheduledFilesRef?.loadScheduledFiles();
@@ -76,22 +78,6 @@
       scheduleResult = { type: 'error', message: err.message };
     }
   }
-
-  function resetRunNow() {
-    runNowFile = null;
-    runNowResult = null;
-    runNowDropZone?.reset();
-  }
-
-  function resetSchedule() {
-    scheduleFile = null;
-    selectedDay = null;
-    scheduleResult = null;
-    scheduleDropZone?.reset();
-  }
-
-  const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-  const DAY_SHORT = { monday:'Mon', tuesday:'Tue', wednesday:'Wed', thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun' };
 </script>
 
 <section class="page-section active" id="page-scraping">
@@ -105,7 +91,7 @@
       </p>
       <DropZone bind:this={runNowDropZone} onfile={onRunNowFile} />
       {#if runNowFile}
-        <FileChip name={runNowFile.name} onremove={removeRunNowFile} />
+        <FileChip name={runNowFile.name} onremove={resetRunNow} />
       {/if}
       <div style="margin-top:1rem">
         <button class="btn btn-accent" disabled={!runNowFile} onclick={doRunNowUpload}>
@@ -119,7 +105,7 @@
           <div class="success-state">
             <span>✓ {runNowResult.message}</span>
             {#if runNowResult.link}
-              <a href={runNowResult.link} target="_blank">Open in Drive</a>
+              <a href={runNowResult.link} target="_blank" rel="noopener noreferrer">Open in Drive</a>
             {/if}
             <button class="btn btn-outline" onclick={resetRunNow}>Upload another</button>
           </div>
@@ -137,16 +123,16 @@
       </p>
       <DropZone bind:this={scheduleDropZone} onfile={onScheduleFile} />
       {#if scheduleFile}
-        <FileChip name={scheduleFile.name} onremove={removeScheduleFile} />
+        <FileChip name={scheduleFile.name} onremove={resetSchedule} />
       {/if}
       <div class="day-picker">
         {#each DAYS as day}
-          <button class="day-btn" class:active={selectedDay === day} onclick={() => selectDay(day)}>{DAY_SHORT[day]}</button>
+          <button class="day-btn" class:active={selectedDay === day} onclick={() => selectDay(day)}>{DAY_LABELS[day]}</button>
         {/each}
       </div>
       <div style="margin-top:0.5rem">
         <button class="btn btn-accent" disabled={!(scheduleFile && selectedDay)} onclick={doScheduleUpload}>
-          <span>{selectedDay ? 'Schedule for ' + selectedDay.charAt(0).toUpperCase() + selectedDay.slice(1) : 'Schedule upload'}</span>
+          <span>{selectedDay ? 'Schedule for ' + capitalize(selectedDay) : 'Schedule upload'}</span>
         </button>
       </div>
       {#if scheduleResult}
@@ -156,7 +142,7 @@
           <div class="success-state">
             <span>✓ {scheduleResult.message}</span>
             {#if scheduleResult.link}
-              <a href={scheduleResult.link} target="_blank">Open in Drive</a>
+              <a href={scheduleResult.link} target="_blank" rel="noopener noreferrer">Open in Drive</a>
             {/if}
             <button class="btn btn-outline" onclick={resetSchedule}>Schedule another</button>
           </div>

@@ -158,7 +158,7 @@ export function preloadAll(branch, files) {
           getAnalysis(file, branch)
             .then(() => { onDone(file); })
             .catch((err) => { onDone(file, err); })
-            .then(() => { active--; next(); });
+            .finally(() => { active--; next(); });
         }
         if (active === 0 && queue.length === 0) resolve();
       }
@@ -170,5 +170,4 @@ export function preloadAll(branch, files) {
   });
 }
 
-// Initialize on import
 openCache();

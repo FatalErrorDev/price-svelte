@@ -7,46 +7,30 @@
 
   let activeProductTab = $state('expensive');
 
-  $effect(() => {
-    // Re-create charts when data or branch changes
-    if (data && branch) {
-      tick().then(() => {
-        const covId = 'chart-coverage-' + branch;
-        const distId = 'chart-dist-' + branch;
-        createCoverageChart(covId, data.compCoverage);
-        createDistributionChart(distId, data.dist);
-      });
-    }
-  });
-
-  function getPctCheaper() {
-    return data.withComp > 0 ? ((data.cheaper / data.withComp) * 100).toFixed(1) : '0';
-  }
-
-  function getPctExpensive() {
-    return data.withComp > 0 ? ((data.expensive / data.withComp) * 100).toFixed(1) : '0';
-  }
-
-  function getMedianClass() {
-    return data.median > 0 ? 'amber' : 'accent';
-  }
-
-  function getSortedSegments() {
+  const pctCheaper = $derived(data ? (data.withComp > 0 ? ((data.cheaper / data.withComp) * 100).toFixed(1) : '0') : '0');
+  const pctExpensive = $derived(data ? (data.withComp > 0 ? ((data.expensive / data.withComp) * 100).toFixed(1) : '0') : '0');
+  const medianClass = $derived(data && data.median > 0 ? 'amber' : 'accent');
+  const sortedSegments = $derived.by(() => {
+    if (!data) return [];
     return data.segments.slice().sort((a, b) => {
       const aTotal = a.cheaper + a.expensive;
       const bTotal = b.cheaper + b.expensive;
-      const aRatio = aTotal > 0 ? (a.cheaper / aTotal) : 0;
-      const bRatio = bTotal > 0 ? (b.cheaper / bTotal) : 0;
-      return bRatio - aRatio;
+      return (bTotal > 0 ? b.cheaper / bTotal : 0) - (aTotal > 0 ? a.cheaper / aTotal : 0);
     });
-  }
+  });
+
+  $effect(() => {
+    if (data && branch) {
+      tick().then(() => {
+        createCoverageChart('chart-coverage-' + branch, data.compCoverage);
+        createDistributionChart('chart-dist-' + branch, data.dist);
+      });
+    }
+  });
 </script>
 
 {#if data}
   {@const config = BRANCH_CONFIG[branch]}
-  {@const pctCheaper = getPctCheaper()}
-  {@const pctExpensive = getPctExpensive()}
-  {@const medianClass = getMedianClass()}
   {@const covId = 'chart-coverage-' + branch}
   {@const distId = 'chart-dist-' + branch}
 
@@ -72,7 +56,7 @@
     {#if data.segments.length === 0}
       <div class="empty-state">No segment data</div>
     {:else}
-      {#each getSortedSegments() as s}
+      {#each sortedSegments as s}
         {@const total = s.cheaper + s.expensive}
         {@const cheaperW = total > 0 ? (s.cheaper / total * 100) : 0}
         {@const expensiveW = total > 0 ? (s.expensive / total * 100) : 0}

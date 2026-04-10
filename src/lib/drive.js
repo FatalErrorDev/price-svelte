@@ -86,7 +86,7 @@ export function signIn() {
 
 export function disconnectDrive() {
   const token = getToken();
-  if (token) {
+  if (token && typeof google !== 'undefined' && google.accounts?.oauth2) {
     google.accounts.oauth2.revoke(token);
   }
   accessToken.set(null);

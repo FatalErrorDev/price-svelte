@@ -1,32 +1,15 @@
 <script>
-  import { onMount } from 'svelte';
   import { isSignedIn } from '../lib/stores.js';
   import { listFiles, deleteFile, FOLDERS } from '../lib/drive.js';
-
-  const DAY_ORDER = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
-  const DAY_LABELS = {
-    monday:'Mon', tuesday:'Tue', wednesday:'Wed',
-    thursday:'Thu', friday:'Fri', saturday:'Sat', sunday:'Sun'
-  };
+  import { DAYS, DAY_LABELS } from '../lib/constants.js';
 
   let loading = $state(false);
   let files = $state({});
   let hasError = $state(false);
   let loadError = $state('');
 
-  let prevSignedIn = $state(false);
-
-  // Reload when signing in
+  // Load when signed in (covers both initial mount and sign-in transitions)
   $effect(() => {
-    const signed = $isSignedIn;
-    if (signed && !prevSignedIn) {
-      loadScheduledFiles();
-    }
-    prevSignedIn = signed;
-  });
-
-  // Reload on mount (e.g., when switching back to scraping page)
-  onMount(() => {
     if ($isSignedIn) {
       loadScheduledFiles();
     }
@@ -43,7 +26,7 @@
 
     try {
       const results = await Promise.allSettled(
-        DAY_ORDER.map((day) =>
+        DAYS.map((day) =>
           listFiles(FOLDERS[day]).then((dayFiles) =>
             dayFiles.map((f) => ({
               day,
@@ -60,7 +43,7 @@
       let partialError = false;
 
       results.forEach((r, i) => {
-        const day = DAY_ORDER[i];
+        const day = DAYS[i];
         if (r.status === 'fulfilled') {
           byDay[day] = r.value;
         } else {
@@ -115,7 +98,7 @@
       <div class="warning-banner">Some folders could not be loaded.</div>
     {/if}
     <div class="day-grid">
-      {#each DAY_ORDER as day}
+      {#each DAYS as day}
         {@const dayFiles = files[day] || []}
         <div class="day-slot" class:has-files={dayFiles.length > 0}>
           <span class="day-slot-label">{DAY_LABELS[day]}</span>

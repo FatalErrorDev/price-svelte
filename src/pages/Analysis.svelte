@@ -19,14 +19,11 @@
   let analyzing = $state(false);
   let errorMsg = $state('');
 
-  let cachedFilesMap = {};
   let preloadDoneVisible = $state(false);
   let preloadDoneTimeout = null;
 
-  // Track preload progress for this branch
   let branchPreload = $derived(($preloadProgress)[branch]);
 
-  // Auto-clear "All files cached" message after 3 seconds
   $effect(() => {
     if (branchPreload && !branchPreload.running && branchPreload.done >= branchPreload.total && branchPreload.total > 0) {
       preloadDoneVisible = true;
@@ -35,32 +32,24 @@
     }
   });
 
-  // React to branch or sign-in changes
-  let prevBranch = null;
-  let prevSignedIn = false;
-
+  // Load on mount and when sign-in state changes
   $effect(() => {
-    const signed = $isSignedIn;
-    const b = branch;
-    if (b !== prevBranch || (signed && !prevSignedIn)) {
-      prevBranch = b;
-      prevSignedIn = signed;
+    if ($isSignedIn) {
       resetAndLoad();
+    } else {
+      files = [];
     }
   });
 
   function resetAndLoad() {
+    if (loading) return;
     mode = 'single';
     selectedFileId = null;
     selectedResult = null;
     allAnalyses = null;
     errorMsg = '';
     destroyAllCharts();
-    if ($isSignedIn) {
-      loadFileList();
-    } else {
-      files = [];
-    }
+    loadFileList();
   }
 
   async function loadFileList() {
@@ -89,17 +78,13 @@
       });
 
       files = result;
-      cachedFilesMap[branch] = result;
-
       preloadAll(branch, result);
 
       // Preload other branch in background
-      const otherBranch = branch === 'sewera' ? 'dobromir' : 'sewera';
-      const otherConfig = BRANCH_CONFIG[otherBranch];
-      if (otherConfig && !cachedFilesMap[otherBranch]) {
-        listFiles(otherConfig.folderId).then((otherFiles) => {
+      const otherBranch = Object.keys(BRANCH_CONFIG).find((b) => b !== branch);
+      if (otherBranch) {
+        listFiles(BRANCH_CONFIG[otherBranch].folderId).then((otherFiles) => {
           otherFiles.forEach((f) => { f.date = extractDate(f.name) || ''; });
-          cachedFilesMap[otherBranch] = otherFiles;
           preloadAll(otherBranch, otherFiles);
         }).catch(() => {});
       }
@@ -173,6 +158,7 @@
 
   onDestroy(() => {
     destroyAllCharts();
+    clearTimeout(preloadDoneTimeout);
   });
 </script>
 

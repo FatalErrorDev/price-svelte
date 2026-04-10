@@ -12,7 +12,6 @@
   import './css/sewera.css';
   import './css/dobromir.css';
 
-  // Set body class based on current page/branch
   $effect(() => {
     if ($currentPage === 'scraping') {
       document.body.className = 'page-scraping';
@@ -21,7 +20,6 @@
     }
   });
 
-  // Generate favicon
   function generateFavicon() {
     const canvas = document.createElement('canvas');
     canvas.width = 32;

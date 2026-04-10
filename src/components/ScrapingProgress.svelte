@@ -1,11 +1,24 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
-  import { escHtml } from '../lib/parser.js';
+  import { BRANCH_CONFIG } from '../lib/parser.js';
+  import { capitalize } from '../lib/constants.js';
+
+  const BRANCHES = Object.keys(BRANCH_CONFIG);
 
   let relayUrl = $state('');
   let eventSource = $state(null);
   let sessions = $state({});
   let connectionStatus = $state('disconnected');
+
+  const sessionsByLocation = $derived.by(() => {
+    const map = {};
+    for (const b of BRANCHES) map[b] = [];
+    for (const s of Object.values(sessions)) {
+      const loc = normalizeLocation(s.location);
+      map[loc]?.push(s);
+    }
+    return map;
+  });
 
   onMount(() => {
     const meta = document.querySelector('meta[name="progress-relay-url"]');
@@ -66,10 +79,6 @@
     return 'sewera';
   }
 
-  function getSessionsForLocation(loc) {
-    return Object.values(sessions).filter((s) => normalizeLocation(s.location) === loc);
-  }
-
   function getPct(s) {
     return s.total_steps > 0 ? Math.round((s.current_step / s.total_steps) * 100) : 0;
   }
@@ -89,14 +98,15 @@
     </span>
   </div>
   <div class="progress-columns">
-    {#each ['sewera', 'dobromir'] as loc}
+    {#each BRANCHES as loc}
+      {@const locSessions = sessionsByLocation[loc]}
       <div class="progress-block" id="progress-{loc}">
-        <h3 class="progress-block-title">{loc.charAt(0).toUpperCase() + loc.slice(1)}</h3>
+        <h3 class="progress-block-title">{capitalize(loc)}</h3>
         <div class="progress-sessions" id="progress-sessions-{loc}">
-          {#if getSessionsForLocation(loc).length === 0}
+          {#if locSessions.length === 0}
             <div class="empty-state empty-state-sm">No active sessions</div>
           {:else}
-            {#each getSessionsForLocation(loc) as s (s.session_id)}
+            {#each locSessions as s (s.session_id)}
               {@const pct = getPct(s)}
               <div class="progress-session" class:complete={s.current_step >= s.total_steps && s.current_competitor >= s.total_competitors}>
                 <div class="progress-session-header">

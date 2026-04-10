@@ -32,6 +32,7 @@ src/
   App.svelte              — Shell: nav + auth + page routing + body class theming
   main.js                 — Entry point, mounts App
   lib/
+    constants.js          — Shared constants (DAYS, DAY_LABELS) and capitalize utility
     stores.js             — Svelte stores (currentPage, currentBranch, accessToken, isSignedIn)
     drive.js              — Google Drive API (OAuth2, upload, download, list, delete)
     parser.js             — XLSX parsing & analysis engine, BRANCH_CONFIG

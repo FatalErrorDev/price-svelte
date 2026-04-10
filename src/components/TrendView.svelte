@@ -33,13 +33,11 @@
   })));
 
   const segNames = $derived.by(() => {
-    const names = [];
-    analyses.forEach((a) => {
-      (a.segments || []).forEach((s) => {
-        if (names.indexOf(s.name) === -1) names.push(s.name);
-      });
-    });
-    return names;
+    const seen = new Set();
+    for (const a of analyses) {
+      for (const s of (a.segments || [])) seen.add(s.name);
+    }
+    return [...seen];
   });
 
   const segSeries = $derived(segNames.map((name) => ({
@@ -54,6 +52,7 @@
 
   // Segment trend data
   const segmentTrend = $derived.by(() => {
+    if (!first || !last) return [];
     const segMap = {};
     first.segments.forEach((s) => { segMap[s.name] = { first: s.median, last: 0 }; });
     last.segments.forEach((s) => {
@@ -69,25 +68,26 @@
     })).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
   });
 
-  // Create line charts when analyses/branch change
+  // Build all charts when data changes; only rebuild coverage chart on mode switch
   $effect(() => {
-    if (analyses && branch) {
-      tick().then(() => {
-        createLineChart(trendMedId, dates, medians);
-        createLineChart(trendCheapId, dates, pctCheapers);
-      });
-    }
+    if (!analyses || !branch) return;
+    // Read these to establish dependencies
+    const _dates = dates;
+    const _medians = medians;
+    const _pctCheapers = pctCheapers;
+    tick().then(() => {
+      createLineChart(trendMedId, _dates, _medians);
+      createLineChart(trendCheapId, _dates, _pctCheapers);
+    });
   });
 
-  // Rebuild coverage chart when series data or covMode changes
   $effect(() => {
-    if (analyses && branch && currentSeries) {
-      tick().then(() => {
-        destroyChart(trendCovId);
-        covChart = createSeriesLineChart(trendCovId, dates, currentSeries);
-        toggleStates = currentSeries.map(() => true);
-      });
-    }
+    if (!analyses || !branch || !currentSeries) return;
+    tick().then(() => {
+      destroyChart(trendCovId);
+      covChart = createSeriesLineChart(trendCovId, dates, currentSeries);
+      toggleStates = currentSeries.map(() => true);
+    });
   });
 
   function toggleDataset(idx) {
