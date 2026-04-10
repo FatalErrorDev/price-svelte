@@ -1,4 +1,5 @@
 <script>
+  import { untrack } from 'svelte';
   import { isSignedIn } from '../lib/stores.js';
   import { listFiles, deleteFile, FOLDERS } from '../lib/drive.js';
   import { DAYS, DAY_LABELS } from '../lib/constants.js';
@@ -11,7 +12,7 @@
   // Load when signed in (covers both initial mount and sign-in transitions)
   $effect(() => {
     if ($isSignedIn) {
-      loadScheduledFiles();
+      untrack(() => loadScheduledFiles());
     }
   });
 

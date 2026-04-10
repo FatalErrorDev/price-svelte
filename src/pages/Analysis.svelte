@@ -1,5 +1,5 @@
 <script>
-  import { onDestroy } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { isSignedIn } from '../lib/stores.js';
   import { BRANCH_CONFIG, extractDate, dateSortKey } from '../lib/parser.js';
   import { listFiles } from '../lib/drive.js';
@@ -35,9 +35,9 @@
   // Load on mount and when sign-in state changes
   $effect(() => {
     if ($isSignedIn) {
-      resetAndLoad();
+      untrack(() => resetAndLoad());
     } else {
-      files = [];
+      untrack(() => { files = []; });
     }
   });
 
